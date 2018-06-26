@@ -3,37 +3,17 @@
 #include <utility>
 #include <string>
 #include <sstream>
+
 using namespace std;
 
-class GameContents {
-    int size; 
-    vector<vector<char>> board;
-    //vector<pair<int, int>> starting_cells;
-public:
-    GameContents(int s, vector<pair<int, int>> starting_cells);
-    void printBoard();
-};
-
-GameContents::GameContents(int s, vector<pair<int, int>> starting_cells) {
-    size = s;
-    vector<vector<char>> initial_board(size, vector<char>(size, '.'));
-    for (size_t i = 0; i < starting_cells.size(); ++i) {
-        int row = starting_cells[i].first;
-        int col = starting_cells[i].second;
-        initial_board[row][col] = 'o';
-    }
-    board = initial_board;
+// Prevents indexing out of range when looking for live neighbors
+char safeSubscript(vector<vector<char>>& matrix, int row, int col) {
+    int size = matrix[0].size();
+    if (row < 0 || row > size - 1 || col < 0 || col > size - 1) return 'x';
+    return matrix[row][col];
 }
 
-void GameContents::printBoard() {
-    for (int row = 0; row < size; ++row) {
-        for (int col = 0; col < size; ++col) {
-            cout << board[row][col] << " ";
-        }
-        cout << endl;
-    }
-}
-
+// Parse user input for starting live cells
 pair<int, int> readPair(string coordinate) {
     vector<int> coordinate_vec;
     pair<int, int> coordinate_pair;
@@ -53,10 +33,87 @@ pair<int, int> readPair(string coordinate) {
     return coordinate_pair;
 }
 
+class GameContents {
+    int size; 
+    int num_alive;
+    vector<vector<char>> board;
+public:
+    GameContents(int s, vector<pair<int, int>> starting_cells);
+    int returnLiveNeighbors(int row, int col);
+    void printBoard();
+    void runGame();
+};
+
+GameContents::GameContents(int s, vector<pair<int, int>> starting_cells) {
+    size = s;
+    num_alive = starting_cells.size();
+    vector<vector<char>> initial_board(size, vector<char>(size, '.'));
+    for (int i = 0; i < num_alive; ++i) {
+        int row = starting_cells[i].first;
+        int col = starting_cells[i].second;
+        initial_board[row][col] = 'o';
+    }
+    board = initial_board;
+}
+
+int GameContents::returnLiveNeighbors(int row, int col) {
+    int live_neighbors = 0;
+    if (safeSubscript(board, row, col + 1) == 'o') ++live_neighbors;
+    if (safeSubscript(board, row + 1, col) == 'o') ++live_neighbors;
+    if (safeSubscript(board, row + 1, col + 1) == 'o') ++live_neighbors;
+    if (safeSubscript(board, row, col - 1) == 'o') ++live_neighbors;
+    if (safeSubscript(board, row - 1, col) == 'o') ++live_neighbors;
+    if (safeSubscript(board, row - 1, col - 1) == 'o') ++live_neighbors;
+    if (safeSubscript(board, row + 1, col - 1) == 'o') ++live_neighbors;
+    if (safeSubscript(board, row - 1, col + 1) == 'o') ++live_neighbors;
+    return live_neighbors;
+}
+
+void GameContents::printBoard() {
+    for (int row = 0; row < size; ++row) {
+        for (int col = 0; col < size; ++col) {
+            cout << board[row][col] << " ";
+        }
+        cout << endl;
+    }
+}
+
+void GameContents::runGame() {
+    string next_step;
+    int live_neighbors = 0; //Life dependant on status of neighbors
+    vector<vector<char>> next_board = board;
+    while (num_alive > 0) {
+        this->printBoard();
+        for (int row = 0; row < size; ++row) {
+            for (int col = 0; col < size; ++col) {
+                live_neighbors = returnLiveNeighbors(row, col);
+                if (board[row][col] == 'o') { //Alive cell
+                    if (live_neighbors < 2 || live_neighbors > 3) {
+                        next_board[row][col] = '.';
+                        --num_alive;
+                    }
+                }
+                else { //Dead cell
+                    if (live_neighbors == 3) {
+                        next_board[row][col] = 'o';
+                        ++num_alive;
+                    }
+                }
+            }
+        }
+        board = next_board;
+        cout << "Hit enter for next step";
+        getline(cin, next_step);
+    }
+}
+
 int main() {
     string coordinate;
     vector<pair<int, int>> starting_cells;
-    cout << "Please enter you starting positions in the form x, y (with a space after the comma), each followed by an ENTER:\n";
+    string side_len;
+    cout << "Please enter side length of square game board: ";
+    getline(cin, side_len);
+    cout << "Please enter initial live cells in the form x, y (with a space after the comma), each followed by an ENTER:\n";
     cout << "When you are finished, hit ENTER again\n";
     while (getline(cin, coordinate)) {
         if (coordinate == "") {
@@ -64,9 +121,7 @@ int main() {
         }
         starting_cells.push_back(readPair(coordinate));
     }
-    GameContents mygame(10, starting_cells);
-    mygame.printBoard();
-
-
+    GameContents mygame(stoi(side_len), starting_cells);
+    mygame.runGame();
     return 0;
 }
