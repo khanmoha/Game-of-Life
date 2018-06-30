@@ -17,17 +17,29 @@ char safeSubscript(vector<vector<char>>& matrix, int row, int col) {
 pair<int, int> readPair(string coordinate) {
     vector<int> coordinate_vec;
     pair<int, int> coordinate_pair;
+    string str;
     istringstream iss(coordinate);
-    for (int i = 0; i < 2; ++i) {
-        string str;
-        int num;
-        iss >> str;
-        if (str.back() == ',') {
-            str.pop_back();
+    try {
+        while (getline(iss, str, ',')) {
+            try {
+                coordinate_vec.push_back(stoi(str));
+            }
+            catch (...) {
+                cerr << "Please only use integers for the coordinates, i.e. 1,2\n";
+                exit(1);
+            }
         }
-        num = stoi(str);
-        coordinate_vec.push_back(num);
+        if (coordinate_vec.size() != 2) throw "Please separate input by commas\n";
     }
+    catch (const char* msg) {
+        cerr << msg;
+        exit(1);
+    }
+    catch (...) {
+        cerr << "Initial positions must be of form x,y where x and y are integers\n";
+        exit(1);
+    }
+
     coordinate_pair.first = coordinate_vec[0];
     coordinate_pair.second = coordinate_vec[1];
     return coordinate_pair;
@@ -38,14 +50,20 @@ class GameContents {
     int num_alive;
     vector<vector<char>> board;
 public:
-    GameContents(int s, vector<pair<int, int>> starting_cells);
+    GameContents(string s, vector<pair<int, int>> starting_cells);
     int returnLiveNeighbors(int row, int col);
     void printBoard();
     void runGame();
 };
 
-GameContents::GameContents(int s, vector<pair<int, int>> starting_cells) {
-    size = s;
+GameContents::GameContents(string s, vector<pair<int, int>> starting_cells) {
+    try {
+        size = stoi(s);
+    }
+    catch (...) {
+        cerr << "Please input integers for side length of square board\n";
+        exit(1);
+    }
     num_alive = starting_cells.size();
     vector<vector<char>> initial_board(size, vector<char>(size, '.'));
     for (int i = 0; i < num_alive; ++i) {
@@ -113,7 +131,8 @@ int main() {
     string side_len;
     cout << "Please enter side length of square game board: ";
     getline(cin, side_len);
-    cout << "Please enter initial live cells in the form x, y (with a space after the comma), each followed by an ENTER:\n";
+    GameContents mygame(side_len, starting_cells);
+    cout << "Please enter initial live cells in the form x,y (each followed by an ENTER):\n";
     cout << "When you are finished, hit ENTER again\n";
     while (getline(cin, coordinate)) {
         if (coordinate == "") {
@@ -121,7 +140,6 @@ int main() {
         }
         starting_cells.push_back(readPair(coordinate));
     }
-    GameContents mygame(stoi(side_len), starting_cells);
     mygame.runGame();
     return 0;
 }
