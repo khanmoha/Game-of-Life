@@ -131,7 +131,6 @@ int main() {
     string side_len;
     cout << "Please enter side length of square game board: ";
     getline(cin, side_len);
-    GameContents mygame(side_len, starting_cells);
     cout << "Please enter initial live cells in the form x,y (each followed by an ENTER):\n";
     cout << "When you are finished, hit ENTER again\n";
     while (getline(cin, coordinate)) {
@@ -140,6 +139,7 @@ int main() {
         }
         starting_cells.push_back(readPair(coordinate));
     }
+    GameContents mygame(side_len, starting_cells);
     mygame.runGame();
     return 0;
 }
